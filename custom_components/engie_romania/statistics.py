@@ -6,7 +6,9 @@ cumulative step at local midnight on the first of that month, which the Energy
 Dashboard and the Statistics Graph card show as monthly bars.
 
 This is billed consumption: a month's value is what was invoiced for it, which
-can include estimates and corrections, not metered daily truth.
+can include estimates and corrections, not metered daily truth. A correction after
+an over-estimate is a negative month; it is kept, so the running total matches what
+was billed, and the Energy Dashboard shows it as a negative bar for that month.
 """
 
 from __future__ import annotations
@@ -61,9 +63,6 @@ def monthly_points(months: list[MonthlyConsumption]) -> list[tuple[datetime, flo
     points: list[tuple[datetime, float, float]] = []
     total = 0.0
     for month in sorted(months, key=lambda m: m.month):
-        if month.kwh < 0:
-            # A credit note would make the cumulative sum decrease; skip it.
-            continue
         total = round(total + month.kwh, 3)
         start = dt_util.start_of_local_day(datetime.combine(month.month, datetime.min.time()))
         points.append((start, month.kwh, total))
