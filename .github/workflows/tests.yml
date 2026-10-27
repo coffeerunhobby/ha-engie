@@ -1,0 +1,40 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "min — HA 2024.12 / py3.12"
+            python: "3.12"
+            ha: "homeassistant==2024.12.0"
+          # No Python 3.13 job: every Home Assistant release from 2026.3
+          # onwards requires Python >=3.14.2, so 3.13 can only reach HA 2026.2,
+          # whose dependency tree no longer resolves to a working state
+          # (pytest-asyncio 1.x, then pycares). 3.12 and 3.14 bracket the whole
+          # range of Home Assistant versions this integration supports.
+          - name: "latest — py3.14"
+            python: "3.14"
+            ha: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: requirements_test.txt
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ${{ matrix.ha }} -r requirements_test.txt
+      - name: Run tests
+        run: pytest -q

@@ -1,0 +1,18 @@
+{
+  "domain": "engie_romania",
+  "name": "ENGIE România",
+  "after_dependencies": [
+    "recorder"
+  ],
+  "codeowners": [
+    "@coffeerunhobby"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/coffeerunhobby/ha-engie",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/coffeerunhobby/ha-engie/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

@@ -1,0 +1,95 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "ENGIE România",
+        "description": "Sign in with your MyENGIE account.",
+        "data": {
+          "username": "E-mail",
+          "password": "Password",
+          "update_interval": "Update interval (hours)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate ENGIE",
+        "description": "Your MyENGIE session is no longer valid. Enter the password again.",
+        "data": {
+          "password": "Password"
+        }
+      },
+      "reconfigure": {
+        "title": "Update ENGIE password",
+        "description": "Enter the current password for your MyENGIE account.",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid e-mail or password.",
+      "cannot_connect": "Could not reach MyENGIE. Try again.",
+      "no_places": "No place of consumption was found on this account.",
+      "unknown": "Unexpected error. Please try again."
+    },
+    "abort": {
+      "already_configured": "This MyENGIE account is already configured.",
+      "reauth_successful": "Re-authentication was successful.",
+      "reconfigure_successful": "ENGIE password updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "ENGIE options",
+        "data": {
+          "update_interval": "Update interval (hours)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "amount_due": {
+        "name": "Amount due"
+      },
+      "last_invoice": {
+        "name": "Last invoice"
+      },
+      "due_date": {
+        "name": "Due date"
+      },
+      "due_date_timestamp": {
+        "name": "Due date (relative)"
+      },
+      "overdue": {
+        "name": "Overdue"
+      },
+      "last_payment": {
+        "name": "Last payment"
+      },
+      "meter_index_gas": {
+        "name": "Gas meter index"
+      },
+      "meter_index_electricity": {
+        "name": "Electricity meter index"
+      },
+      "self_reading_gas": {
+        "name": "Gas self-reading window"
+      },
+      "self_reading_electricity": {
+        "name": "Electricity self-reading window"
+      }
+    },
+    "binary_sensor": {
+      "overdue": {
+        "name": "Overdue"
+      },
+      "self_reading_open_gas": {
+        "name": "Gas self-reading open"
+      },
+      "self_reading_open_electricity": {
+        "name": "Electricity self-reading open"
+      }
+    }
+  }
+}
