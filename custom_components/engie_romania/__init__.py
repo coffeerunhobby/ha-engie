@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import logging
+
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
+from .const import CONF_UPDATE_INTERVAL
 from .coordinator import EngieConfigEntry, EngieCoordinator
 from .crypto import EngieCipher
 from .store import EngieSubmissionStore
+
+_LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,
@@ -24,23 +29,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: EngieConfigEntry) -> boo
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    entry.async_on_unload(entry.add_update_listener(_async_reload_entry))
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: EngieConfigEntry) -> bool:
     """Unload a config entry."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    if unload_ok and (coordinator := entry.runtime_data) is not None:
-        await coordinator.async_shutdown()
-    return unload_ok
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
-async def _async_reload_entry(hass: HomeAssistant, entry: EngieConfigEntry) -> None:
-    """Reload only when a tunable setting changed."""
-    coordinator = entry.runtime_data
-    if coordinator is None or coordinator.settings_changed():
-        await hass.config_entries.async_reload(entry.entry_id)
+async def async_migrate_entry(hass: HomeAssistant, entry: EngieConfigEntry) -> bool:
+    """1.1 → 1.2: the update interval is no longer a setting."""
+    if entry.version > 1:
+        return False
+    if entry.minor_version < 2:
+        data = {k: v for k, v in entry.data.items() if k != CONF_UPDATE_INTERVAL}
+        hass.config_entries.async_update_entry(entry, data=data, minor_version=2)
+        _LOGGER.debug("Migrated the ENGIE entry to version 1.2")
+    return True
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: EngieConfigEntry) -> None:

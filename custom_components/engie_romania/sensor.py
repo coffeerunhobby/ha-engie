@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, time
 from typing import Any
 
+from aioengieromania import Meter, PointData
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -27,7 +28,9 @@ from homeassistant.util import dt as dt_util
 from .const import CURRENCY_RON, DIVISION_GAS, DIVISION_NAMES
 from .coordinator import EngieConfigEntry, EngieCoordinator
 from .entity import EngiePlaceEntity
-from .models import Meter, PointData
+
+# Entities read the coordinator; they never call the API themselves.
+PARALLEL_UPDATES = 0
 
 
 def _iso(value: date | None) -> str | None:
@@ -50,10 +53,6 @@ def _due_datetime(point: PointData) -> datetime | None:
     if due is None:
         return None
     return datetime.combine(due, time.min).replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
-
-
-def _due_icon(point: PointData) -> str:
-    return "mdi:calendar-alert" if point.overdue_invoices(_today()) else "mdi:calendar-clock"
 
 
 def _invoice_attrs(point: PointData) -> dict[str, Any]:
@@ -97,14 +96,12 @@ def _payment_attrs(point: PointData) -> dict[str, Any]:
 class EngieSensorDescription(SensorEntityDescription):
     value_fn: Callable[[PointData], Any]
     attrs_fn: Callable[[PointData], dict[str, Any]] | None = None
-    icon_fn: Callable[[PointData], str] | None = None
 
 
 PLACE_SENSORS: tuple[EngieSensorDescription, ...] = (
     EngieSensorDescription(
         key="amount_due",
         translation_key="amount_due",
-        icon="mdi:cash-multiple",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_RON,
         value_fn=lambda p: p.amount_due,
@@ -113,7 +110,6 @@ PLACE_SENSORS: tuple[EngieSensorDescription, ...] = (
     EngieSensorDescription(
         key="last_invoice",
         translation_key="last_invoice",
-        icon="mdi:file-document-outline",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_RON,
         value_fn=lambda p: p.latest_invoice.total if p.latest_invoice else None,
@@ -121,28 +117,22 @@ PLACE_SENSORS: tuple[EngieSensorDescription, ...] = (
     EngieSensorDescription(
         key="due_date",
         translation_key="due_date",
-        icon="mdi:calendar-clock",
         value_fn=lambda p: _iso(_next_due_date(p)),
-        icon_fn=_due_icon,
     ),
     EngieSensorDescription(
         key="due_date_timestamp",
         translation_key="due_date_timestamp",
-        icon="mdi:calendar-clock",
         device_class=SensorDeviceClass.TIMESTAMP,
         value_fn=_due_datetime,
-        icon_fn=_due_icon,
     ),
     EngieSensorDescription(
         key="overdue",
         translation_key="overdue",
-        icon="mdi:alert-circle-outline",
         value_fn=lambda p: "yes" if p.overdue_invoices(_today()) else "no",
     ),
     EngieSensorDescription(
         key="last_payment",
         translation_key="last_payment",
-        icon="mdi:cash-check",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_RON,
         value_fn=lambda p: p.latest_payment.amount if p.latest_payment else None,
@@ -188,6 +178,9 @@ class EngieSensor(EngiePlaceEntity, SensorEntity):
     """A per-place sensor described by :class:`EngieSensorDescription`."""
 
     entity_description: EngieSensorDescription
+    # The invoice and payment lists are for display; recording them on every
+    # update would only grow the database.
+    _unrecorded_attributes = frozenset({"history"})
 
     def __init__(
         self,
@@ -196,20 +189,13 @@ class EngieSensor(EngiePlaceEntity, SensorEntity):
         poc: str,
         description: EngieSensorDescription,
     ) -> None:
-        super().__init__(coordinator, config_entry, poc, description.key, "sensor")
+        super().__init__(coordinator, config_entry, poc, description.key)
         self.entity_description = description
 
     @property
     def native_value(self) -> Any:
         point = self._point
         return self.entity_description.value_fn(point) if point else None
-
-    @property
-    def icon(self) -> str | None:
-        point = self._point
-        if point is not None and self.entity_description.icon_fn is not None:
-            return self.entity_description.icon_fn(point)
-        return super().icon
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
@@ -232,7 +218,7 @@ class _MeterSensor(EngiePlaceEntity, SensorEntity):
         division: str,
     ) -> None:
         name = DIVISION_NAMES.get(division, division)
-        super().__init__(coordinator, config_entry, poc, f"{self._kind}_{name}", "sensor")
+        super().__init__(coordinator, config_entry, poc, f"{self._kind}_{name}")
         self._division = division
         self._attr_translation_key = f"{self._kind}_{name}"
 
@@ -250,7 +236,6 @@ class EngieMeterIndexSensor(_MeterSensor):
     """The last meter index: cubic metres for gas, kWh for electricity."""
 
     _kind = "meter_index"
-    _attr_icon = "mdi:counter"
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
 
     def __init__(self, *args: Any) -> None:
@@ -272,7 +257,6 @@ class EngieSelfReadingSensor(_MeterSensor):
     """Whether the self-reading window is open, with its dates."""
 
     _kind = "self_reading"
-    _attr_icon = "mdi:calendar-check"
 
     @property
     def native_value(self) -> str | None:

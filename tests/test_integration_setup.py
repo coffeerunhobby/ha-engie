@@ -51,7 +51,7 @@ async def entry(hass: HomeAssistant, enable_custom_integrations) -> MockConfigEn
 async def loaded(hass: HomeAssistant, entry: MockConfigEntry):
     entry.add_to_hass(hass)
     with (
-        patch("custom_components.engie_romania.coordinator.EngieApiClient", StubApi),
+        patch("custom_components.engie_romania.coordinator.EngieClient", StubApi),
         patch(
             "custom_components.engie_romania.coordinator.async_update_consumption_statistics",
             MagicMock(return_value=None),
@@ -78,13 +78,15 @@ async def test_every_place_gets_its_entities(hass: HomeAssistant, loaded):
             f"sensor.{DOMAIN}_{poc}_amount_due",
             f"sensor.{DOMAIN}_{poc}_last_invoice",
             f"sensor.{DOMAIN}_{poc}_due_date",
-            f"sensor.{DOMAIN}_{poc}_due_date_timestamp",
+            f"sensor.{DOMAIN}_{poc}_due_date_relative",
             f"sensor.{DOMAIN}_{poc}_overdue",
             f"sensor.{DOMAIN}_{poc}_last_payment",
-            f"sensor.{DOMAIN}_{poc}_meter_index_gas",
-            f"sensor.{DOMAIN}_{poc}_self_reading_gas",
+            f"sensor.{DOMAIN}_{poc}_gas_meter_index",
+            f"sensor.{DOMAIN}_{poc}_gas_self_reading_window",
             f"binary_sensor.{DOMAIN}_{poc}_overdue",
-            f"binary_sensor.{DOMAIN}_{poc}_self_reading_open_gas",
+            f"binary_sensor.{DOMAIN}_{poc}_gas_self_reading_open",
+            f"number.{DOMAIN}_{poc}_gas_reading_to_submit",
+            f"button.{DOMAIN}_{poc}_submit_gas_reading",
         ):
             assert hass.states.get(entity_id) is not None, f"{entity_id} was not created"
 
@@ -95,7 +97,7 @@ async def test_states_reflect_the_account(hass: HomeAssistant, loaded):
     assert hass.states.get(f"sensor.{DOMAIN}_{poc}_last_invoice").state == "123.45"
     assert hass.states.get(f"sensor.{DOMAIN}_{poc}_due_date").state == "2026-09-15"
     assert hass.states.get(f"sensor.{DOMAIN}_{poc}_last_payment").state == "200.0"
-    gas = hass.states.get(f"sensor.{DOMAIN}_{poc}_meter_index_gas")
+    gas = hass.states.get(f"sensor.{DOMAIN}_{poc}_gas_meter_index")
     assert gas.state == "1234.0"
     assert gas.attributes["unit_of_measurement"] == "m³"
     assert gas.attributes["device_class"] == "gas"
@@ -108,10 +110,10 @@ async def test_overdue_is_a_problem_binary_sensor(hass: HomeAssistant, loaded):
 
 
 async def test_self_reading_window_open_and_not_a_problem(hass: HomeAssistant, loaded):
-    state = hass.states.get(f"binary_sensor.{DOMAIN}_{P.POC_A}_self_reading_open_gas")
+    state = hass.states.get(f"binary_sensor.{DOMAIN}_{P.POC_A}_gas_self_reading_open")
     assert state.state == "on"  # window 20-31 Oct, today 25 Oct
     assert state.attributes.get("device_class") is None
-    assert hass.states.get(f"sensor.{DOMAIN}_{P.POC_A}_self_reading_gas").state == "open"
+    assert hass.states.get(f"sensor.{DOMAIN}_{P.POC_A}_gas_self_reading_window").state == "open"
 
 
 async def test_each_place_is_its_own_device(hass: HomeAssistant, loaded):
@@ -123,7 +125,10 @@ async def test_each_place_is_its_own_device(hass: HomeAssistant, loaded):
     }
     assert len(devices) == 2
     names = {dr.async_get(hass).async_get(d).name for d in devices}
-    assert any("Exemplu" in n for n in names) and any("Model" in n for n in names)
+    # Named by ENGIE's place number, not the address, so entity ids carry no address.
+    assert names == {f"ENGIE România {P.POC_A}", f"ENGIE România {P.POC_B}"}
+    amount_due = hass.states.get(f"sensor.{DOMAIN}_{P.POC_A}_amount_due")
+    assert amount_due.attributes["address"].startswith("Str. Exemplu")
 
 
 async def test_the_password_stays_encrypted(loaded):
@@ -134,3 +139,9 @@ async def test_unload_is_clean(hass: HomeAssistant, loaded):
     assert await hass.config_entries.async_unload(loaded.entry_id)
     await hass.async_block_till_done()
     assert loaded.state is ConfigEntryState.NOT_LOADED
+
+
+async def test_older_entries_lose_the_interval_setting(loaded):
+    """1.1 entries carried a user-set polling interval; core picks it now."""
+    assert loaded.minor_version == 2
+    assert CONF_UPDATE_INTERVAL not in loaded.data

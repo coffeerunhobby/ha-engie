@@ -42,9 +42,28 @@ The button's attributes show what the next press will do: `will_submit_to_engie`
 
 ## Setup
 
-**Settings → Devices & services → Add integration → ENGIE România**, then the e-mail
-and password of your MyENGIE account. Every place of consumption on the account is
-added automatically. To change the password later: the entry's **⋮ → Reconfigure**.
+**Settings → Devices & services → Add integration → ENGIE România**, then:
+
+- **E-mail**: the address you sign in to MyENGIE with.
+- **Password**: your MyENGIE password.
+
+Every place of consumption on the account is added automatically, as a device named
+"ENGIE România" plus ENGIE's place number; rename it (for example to "Acasă") and its
+entities follow. The address is shown as an attribute of **Amount due**. To change the
+password later: the entry's **⋮ → Reconfigure**.
+
+## Data updates
+
+The integration asks MyENGIE every 6 hours: ENGIE bills monthly and the meter index
+changes at most daily. To refresh sooner, call the `homeassistant.update_entity`
+action on any of its entities, for example from an automation.
+
+## Removal
+
+**Settings → Devices & services → ENGIE România**, then **⋮ → Delete** on the account.
+This removes its devices, entities and the record of sent self-readings. Imported
+consumption statistics stay in the database until you delete them under
+**Developer tools → Statistics** (**Tools → Statistics** from Home Assistant 2026.11).
 
 The password is stored encrypted (Fernet, via the `cryptography` package Home
 Assistant already ships), with the key in a separate file.

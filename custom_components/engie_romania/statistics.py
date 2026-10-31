@@ -23,7 +23,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
 from .const import DIVISION_NAMES, DOMAIN
-from .models import MonthlyConsumption
+from aioengieromania import MonthlyConsumption
 
 _LOGGER = logging.getLogger(__name__)
 

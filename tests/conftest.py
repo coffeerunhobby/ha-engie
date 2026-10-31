@@ -1,7 +1,7 @@
 """Shared pytest configuration for the ENGIE România integration tests.
 
-The pure-logic tests (parser, store, crypto helpers) have no Home Assistant
-dependency and always run. The rest require Home Assistant and the
+The pure-logic tests (crypto helpers) have no Home Assistant dependency and
+always run. The rest require Home Assistant and the
 ``pytest-homeassistant-custom-component`` plugin; they are skipped automatically
 where that stack is unavailable (e.g. a machine without a C toolchain to build
 Home Assistant's native dependencies).

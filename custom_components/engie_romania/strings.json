@@ -6,8 +6,11 @@
         "description": "Sign in with your MyENGIE account.",
         "data": {
           "username": "E-mail",
-          "password": "Password",
-          "update_interval": "Update interval (hours)"
+          "password": "Password"
+        },
+        "data_description": {
+          "username": "The e-mail address you sign in to MyENGIE with.",
+          "password": "Your MyENGIE password. It is stored encrypted."
         }
       },
       "reauth_confirm": {
@@ -15,6 +18,9 @@
         "description": "Your MyENGIE session is no longer valid. Enter the password again.",
         "data": {
           "password": "Password"
+        },
+        "data_description": {
+          "password": "The current password of your MyENGIE account."
         }
       },
       "reconfigure": {
@@ -22,6 +28,9 @@
         "description": "Enter the current password for your MyENGIE account.",
         "data": {
           "password": "Password"
+        },
+        "data_description": {
+          "password": "The current password of your MyENGIE account."
         }
       }
     },
@@ -35,16 +44,6 @@
       "already_configured": "This MyENGIE account is already configured.",
       "reauth_successful": "Re-authentication was successful.",
       "reconfigure_successful": "ENGIE password updated."
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "ENGIE options",
-        "data": {
-          "update_interval": "Update interval (hours)"
-        }
-      }
     }
   },
   "entity": {
@@ -106,6 +105,41 @@
       "submit_reading_electricity": {
         "name": "Submit electricity reading"
       }
+    }
+  },
+  "exceptions": {
+    "meter_unavailable": {
+      "message": "This meter is not available right now."
+    },
+    "index_missing": {
+      "message": "Enter the index in the {service} 'reading to submit' entity first."
+    },
+    "index_below_last": {
+      "message": "Index {index} is below the last known index ({last}); a meter cannot run backwards."
+    },
+    "window_closed_until": {
+      "message": "The {service} self-reading window is closed (next window: {start} to {end})."
+    },
+    "window_closed": {
+      "message": "The {service} self-reading window is closed."
+    },
+    "already_submitted": {
+      "message": "Index {index} was already sent for this window; ENGIE accepts one per window (use the MyENGIE app to correct it)."
+    },
+    "not_ready": {
+      "message": "The MyENGIE connection is not ready yet."
+    },
+    "rejected": {
+      "message": "ENGIE refused index {index}: {reason}"
+    },
+    "auth_failed": {
+      "message": "MyENGIE rejected the session; nothing was sent. Check the account password."
+    },
+    "not_confirmed": {
+      "message": "MyENGIE did not confirm the reading ({error}). It may still have arrived: check the MyENGIE app before pressing again."
+    },
+    "send_failed": {
+      "message": "Could not send the reading: {error}"
     }
   }
 }

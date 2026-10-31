@@ -19,6 +19,13 @@ import asyncio
 import logging
 from typing import Any
 
+from aioengieromania import (
+    EngieAuthError,
+    EngieConnectionError,
+    EngieError,
+    EngieRejectedError,
+    Meter,
+)
 from homeassistant.components.button import ButtonEntity
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
@@ -26,13 +33,14 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from .api import EngieAuthError, EngieConnectionError, EngieError, EngieRejectedError
 from .const import DIVISION_NAMES, DOMAIN
 from .coordinator import EngieConfigEntry, EngieCoordinator
 from .entity import EngiePlaceEntity
-from .models import Meter
 
 _LOGGER = logging.getLogger(__name__)
+
+# One submission at a time, across every meter of the account.
+PARALLEL_UPDATES = 1
 
 
 def _today():
@@ -68,8 +76,6 @@ async def async_setup_entry(
 class EngieSubmitReadingButton(EngiePlaceEntity, ButtonEntity):
     """Sends the staged index to ENGIE when the self-reading window allows it."""
 
-    _attr_icon = "mdi:send-clock"
-
     def __init__(
         self,
         coordinator: EngieCoordinator,
@@ -78,7 +84,7 @@ class EngieSubmitReadingButton(EngiePlaceEntity, ButtonEntity):
         division: str,
     ) -> None:
         self._name = DIVISION_NAMES.get(division, division)
-        super().__init__(coordinator, config_entry, poc, f"submit_reading_{self._name}", "button")
+        super().__init__(coordinator, config_entry, poc, f"submit_reading_{self._name}")
         self._division = division
         self._attr_translation_key = f"submit_reading_{self._name}"
         # Two quick presses must not both get past the once-per-window check.
@@ -129,60 +135,53 @@ class EngieSubmitReadingButton(EngiePlaceEntity, ButtonEntity):
         async with self._lock:
             await self._async_submit()
 
+    def _error(self, key: str, **placeholders: str) -> HomeAssistantError:
+        return HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key=key,
+            translation_placeholders={"service": self._name, **placeholders},
+        )
+
     async def _async_submit(self) -> None:
         point = self._point
         meter = self._meter
         if point is None or meter is None:
-            raise HomeAssistantError("This meter is not available right now")
+            raise self._error("meter_unavailable")
 
         value = self._staged_index()
         if not value or value <= 0:
-            raise HomeAssistantError(
-                f"Enter the index in '{self._name.capitalize()} reading to submit' first"
-            )
+            raise self._error("index_missing")
         index = int(value)
         if meter.last_index is not None and index < meter.last_index:
-            raise HomeAssistantError(
-                f"Index {index} is below the last known index ({meter.last_index:g}); "
-                "a meter cannot run backwards"
-            )
+            raise self._error("index_below_last", index=str(index), last=f"{meter.last_index:g}")
 
         if not meter.self_read_open(_today()):
-            when = (
-                f" (next window: {meter.window_start.isoformat()} to {meter.window_end.isoformat()})"
-                if meter.window_start and meter.window_end
-                else ""
-            )
-            raise HomeAssistantError(f"The {self._name} self-reading window is closed{when}")
+            if meter.window_start and meter.window_end:
+                raise self._error(
+                    "window_closed_until",
+                    start=meter.window_start.isoformat(),
+                    end=meter.window_end.isoformat(),
+                )
+            raise self._error("window_closed")
 
         submissions = self.coordinator.submissions
         if submissions.already_submitted(self._poc, self._division, meter.window_end):
             last = submissions.last(self._poc, self._division) or {}
-            raise HomeAssistantError(
-                f"Index {last.get('index')} was already sent for this window; "
-                "ENGIE accepts one per window (use the MyENGIE app to correct it)"
-            )
+            raise self._error("already_submitted", index=str(last.get("index")))
 
         api = self.coordinator.api
         if api is None:
-            raise HomeAssistantError("The MyENGIE connection is not ready yet")
+            raise self._error("not_ready")
         try:
-            await api.async_submit_index(
-                point.poc, point.pa, meter.division, meter.installation_number, meter.serial, index
-            )
+            await api.async_submit_index(point, meter, index)
         except EngieRejectedError as err:
-            raise HomeAssistantError(f"ENGIE refused index {index}: {err}") from err
+            raise self._error("rejected", index=str(index), reason=str(err)) from err
         except EngieAuthError as err:
-            raise HomeAssistantError(
-                "MyENGIE rejected the session; nothing was sent. Check the account password"
-            ) from err
+            raise self._error("auth_failed") from err
         except EngieConnectionError as err:
-            raise HomeAssistantError(
-                f"MyENGIE did not confirm the reading ({err}). It may still have arrived: "
-                "check the MyENGIE app before pressing again"
-            ) from err
+            raise self._error("not_confirmed", error=str(err)) from err
         except EngieError as err:
-            raise HomeAssistantError(f"Could not send the reading: {err}") from err
+            raise self._error("send_failed", error=str(err)) from err
 
         submissions.mark_submitted(
             self._poc, self._division, meter.window_end, index, dt_util.now().isoformat()

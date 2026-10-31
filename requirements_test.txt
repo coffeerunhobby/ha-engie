@@ -1,3 +1,5 @@
 # Pulls pytest plus a matching Home Assistant, enabling the full suite.
-# The pure parser tests run even without a working HA install.
+# The MyENGIE client and its parser tests live in the aioengieromania library.
 pytest-homeassistant-custom-component
+# The integration's own requirement (manifest.json); keep the pins in step.
+aioengieromania==0.1.0

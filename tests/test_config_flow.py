@@ -19,7 +19,7 @@ from custom_components.engie_romania.crypto import EngieCipher, is_encrypted  # 
 from .stub import StubApi  # noqa: E402
 from .test_integration_setup import _reset_stub, entry  # noqa: E402,F401
 
-FLOW_API = "custom_components.engie_romania.config_flow.EngieApiClient"
+FLOW_API = "custom_components.engie_romania.config_flow.EngieClient"
 SETUP = "custom_components.engie_romania.async_setup_entry"
 
 

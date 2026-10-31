@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Final
+
+from aioengieromania import DIVISION_ELECTRICITY, DIVISION_GAS
 
 DOMAIN: Final = "engie_romania"
 
@@ -10,18 +13,16 @@ MANUFACTURER: Final = "ENGIE România"
 MODEL: Final = "MyENGIE - cont online"
 ATTRIBUTION: Final = "Date furnizate de MyENGIE"
 
-# ── Config / option keys ────────────────────────────────────────────────────
+# ── Config keys ─────────────────────────────────────────────────────────────
 # CONF_USERNAME and CONF_PASSWORD come from homeassistant.const.
-CONF_UPDATE_INTERVAL: Final = "update_interval"
 # A random id generated once per config entry and sent as the app's Device-Id,
 # so the account sees one stable device instead of a new one on every restart.
 CONF_DEVICE_ID: Final = "device_id"
+# Removed in config entry version 1.2; still read once to migrate older entries.
+CONF_UPDATE_INTERVAL: Final = "update_interval"
 
-# ── Defaults / bounds ───────────────────────────────────────────────────────
 # ENGIE bills monthly and the meter index changes at most daily.
-DEFAULT_UPDATE_INTERVAL_HOURS: Final = 6
-MIN_UPDATE_INTERVAL_HOURS: Final = 1
-MAX_UPDATE_INTERVAL_HOURS: Final = 24
+UPDATE_INTERVAL: Final = timedelta(hours=6)
 
 CURRENCY_RON: Final = "RON"
 
@@ -33,47 +34,5 @@ STORAGE_KEY_SECRET: Final = f"{DOMAIN}_key"
 # Which self-reading windows already had an index sent, per config entry.
 STORAGE_KEY_SUBMISSIONS: Final = f"{DOMAIN}_submissions"
 
-# ── MyENGIE API ─────────────────────────────────────────────────────────────
-# The mobile app's JSON gateway. A form POST to /v1/login returns a bearer token;
-# every request must also carry the app's device headers or the gateway refuses it.
-BASE_URL: Final = "https://gwss.engie.ro/myservices"
-LOGIN_URL: Final = f"{BASE_URL}/v1/login"
-PLACES_URL: Final = f"{BASE_URL}/v1/placesofconsumption"
-DIVISIONS_URL: Final = f"{BASE_URL}/v1/placesofconsumption/divisions/{{poc}}"
-INDEX_URL: Final = f"{BASE_URL}/v1/index/{{poc}}"
-# Self-reading submission: a form POST (not JSON), answered 200 even on rejection.
-SUBMIT_INDEX_URL: Final = f"{BASE_URL}/v1/index"
-CONSUMPTION_URL: Final = f"{BASE_URL}/v1/index/consumption/{{poc}}"
-INVOICES_URL: Final = f"{BASE_URL}/v1/invoices/history/{{poc}}"
-PAYMENTS_URL: Final = f"{BASE_URL}/v1/invoices/payment/history/{{pa}}"
-# "ballance" is ENGIE's own spelling in the endpoint path.
-BALANCE_URL: Final = f"{BASE_URL}/v1/invoices/ballance-details"
-
-# The server rejects invoice-history windows longer than twelve months.
-INVOICE_LOOKBACK_DAYS: Final = 364
-PAYMENT_LOOKBACK_DAYS: Final = 730
-CONSUMPTION_LOOKBACK_DAYS: Final = 1095
-
-REQUEST_TIMEOUT: Final = 30
-
-APP_VERSION: Final = "2.1.11"
-APP_BUILD: Final = "177"
-DEVICE_HEADERS: Final = {
-    "source": "android",
-    "App-Version": APP_VERSION,
-    "App-Build": APP_BUILD,
-    "OS-Version": "14",
-    "OS-Platform": "android",
-    "Device-Type": "phone",
-    "Device-Manufacturer": "Google",
-    "Device-Model": "Pixel 8",
-    "Screen-Height": "2400",
-    "Screen-Width": "1080",
-    "User-Agent": f"MyEngie/{APP_VERSION} (Android; ro.engie.agentia; build {APP_BUILD})",
-    "Accept": "application/json",
-}
-
-# ENGIE's division codes, and the English names used in entity keys.
-DIVISION_GAS: Final = "gaz"
-DIVISION_ELECTRICITY: Final = "elec"
+# English names of ENGIE's division codes, used in entity keys.
 DIVISION_NAMES: Final = {DIVISION_GAS: "gas", DIVISION_ELECTRICITY: "electricity"}

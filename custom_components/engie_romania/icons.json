@@ -1,0 +1,64 @@
+{
+  "entity": {
+    "sensor": {
+      "amount_due": {
+        "default": "mdi:cash-multiple"
+      },
+      "last_invoice": {
+        "default": "mdi:file-document-outline"
+      },
+      "due_date": {
+        "default": "mdi:calendar-clock"
+      },
+      "due_date_timestamp": {
+        "default": "mdi:calendar-clock"
+      },
+      "overdue": {
+        "default": "mdi:alert-circle-outline",
+        "state": {
+          "yes": "mdi:alert-circle",
+          "no": "mdi:check-circle-outline"
+        }
+      },
+      "last_payment": {
+        "default": "mdi:cash-check"
+      },
+      "meter_index_gas": {
+        "default": "mdi:counter"
+      },
+      "meter_index_electricity": {
+        "default": "mdi:counter"
+      },
+      "self_reading_gas": {
+        "default": "mdi:calendar-check"
+      },
+      "self_reading_electricity": {
+        "default": "mdi:calendar-check"
+      }
+    },
+    "binary_sensor": {
+      "self_reading_open_gas": {
+        "default": "mdi:calendar-check"
+      },
+      "self_reading_open_electricity": {
+        "default": "mdi:calendar-check"
+      }
+    },
+    "number": {
+      "reading_to_submit_gas": {
+        "default": "mdi:numeric"
+      },
+      "reading_to_submit_electricity": {
+        "default": "mdi:numeric"
+      }
+    },
+    "button": {
+      "submit_reading_gas": {
+        "default": "mdi:send-clock"
+      },
+      "submit_reading_electricity": {
+        "default": "mdi:send-clock"
+      }
+    }
+  }
+}

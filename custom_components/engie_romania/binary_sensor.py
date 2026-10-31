@@ -22,6 +22,8 @@ from .const import DIVISION_NAMES
 from .coordinator import EngieConfigEntry, EngieCoordinator
 from .entity import EngiePlaceEntity
 
+PARALLEL_UPDATES = 0
+
 
 def _today():
     return dt_util.now().date()
@@ -67,7 +69,7 @@ class EngieOverdueBinarySensor(EngiePlaceEntity, BinarySensorEntity):
     def __init__(
         self, coordinator: EngieCoordinator, config_entry: EngieConfigEntry, poc: str
     ) -> None:
-        super().__init__(coordinator, config_entry, poc, "overdue", "binary_sensor")
+        super().__init__(coordinator, config_entry, poc, "overdue")
         self._attr_unique_id = f"{self._device_id}_overdue_binary"
 
     @property
@@ -91,7 +93,6 @@ class EngieOverdueBinarySensor(EngiePlaceEntity, BinarySensorEntity):
 class EngieSelfReadingBinarySensor(EngiePlaceEntity, BinarySensorEntity):
     """On while the self-reading window for one metered service is open."""
 
-    _attr_icon = "mdi:calendar-check"
 
     def __init__(
         self,
@@ -102,7 +103,7 @@ class EngieSelfReadingBinarySensor(EngiePlaceEntity, BinarySensorEntity):
     ) -> None:
         name = DIVISION_NAMES.get(division, division)
         super().__init__(
-            coordinator, config_entry, poc, f"self_reading_open_{name}", "binary_sensor"
+            coordinator, config_entry, poc, f"self_reading_open_{name}"
         )
         self._attr_unique_id = f"{self._device_id}_self_reading_open_{name}_binary"
         self._attr_translation_key = f"self_reading_open_{name}"

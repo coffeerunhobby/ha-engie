@@ -8,7 +8,7 @@ import pytest
 
 pytest.importorskip("homeassistant")
 
-from custom_components.engie_romania.models import MonthlyConsumption  # noqa: E402
+from aioengieromania import MonthlyConsumption  # noqa: E402
 from custom_components.engie_romania.statistics import monthly_points  # noqa: E402
 
 

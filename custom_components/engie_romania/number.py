@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from aioengieromania import Meter
 from homeassistant.components.number import NumberMode, RestoreNumber
 from homeassistant.const import UnitOfEnergy, UnitOfVolume
 from homeassistant.core import HomeAssistant, callback
@@ -17,7 +18,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DIVISION_GAS, DIVISION_NAMES
 from .coordinator import EngieConfigEntry, EngieCoordinator
 from .entity import EngiePlaceEntity
-from .models import Meter
+
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
@@ -49,7 +51,6 @@ async def async_setup_entry(
 class EngieReadingNumber(EngiePlaceEntity, RestoreNumber):
     """The index the next self-reading submission will send."""
 
-    _attr_icon = "mdi:numeric"
     _attr_mode = NumberMode.BOX
     _attr_native_min_value = 0
     _attr_native_max_value = 99_999_999
@@ -63,7 +64,7 @@ class EngieReadingNumber(EngiePlaceEntity, RestoreNumber):
         division: str,
     ) -> None:
         name = DIVISION_NAMES.get(division, division)
-        super().__init__(coordinator, config_entry, poc, f"reading_to_submit_{name}", "number")
+        super().__init__(coordinator, config_entry, poc, f"reading_to_submit_{name}")
         self._division = division
         self._attr_translation_key = f"reading_to_submit_{name}"
         self._attr_native_unit_of_measurement = (

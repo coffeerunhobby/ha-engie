@@ -16,15 +16,14 @@ pytest.importorskip("homeassistant")
 from homeassistant.core import HomeAssistant  # noqa: E402
 from homeassistant.exceptions import HomeAssistantError  # noqa: E402
 
-from custom_components.engie_romania.api import _rejection_reason, index_form  # noqa: E402
 from custom_components.engie_romania.const import DOMAIN  # noqa: E402
 
 from . import payloads as P  # noqa: E402
 from .stub import StubApi  # noqa: E402
 from .test_integration_setup import _reset_stub, entry, loaded  # noqa: E402,F401
 
-NUMBER = f"number.{DOMAIN}_{P.POC_A}_reading_to_submit_gas"
-BUTTON = f"button.{DOMAIN}_{P.POC_A}_submit_reading_gas"
+NUMBER = f"number.{DOMAIN}_{P.POC_A}_gas_reading_to_submit"
+BUTTON = f"button.{DOMAIN}_{P.POC_A}_submit_gas_reading"
 
 
 async def _stage_and_press(hass: HomeAssistant, value: float) -> None:
@@ -32,25 +31,6 @@ async def _stage_and_press(hass: HomeAssistant, value: float) -> None:
         "number", "set_value", {"entity_id": NUMBER, "value": value}, blocking=True
     )
     await hass.services.async_call("button", "press", {"entity_id": BUTTON}, blocking=True)
-
-
-def test_the_form_matches_what_the_app_sends():
-    assert index_form("P1", "A1", "gaz", "555", "SER1", 1300) == {
-        "poc_number": "P1",
-        "pa": "A1",
-        "installation_number": "555",
-        "division": "gaz",
-        "index": "1300",
-        "serie_contor": "SER1",
-    }
-    assert "serie_contor" not in index_form("P1", "A1", "gaz", "555", None, 1300)
-
-
-def test_the_rejection_reason_is_engies_own_text():
-    body = {"error": True, "errors": {"index": ["Index prea mic"]}, "description": "x"}
-    assert _rejection_reason(body) == "Index prea mic"
-    assert _rejection_reason({"error": True, "errors": [], "description": "Eroare"}) == "Eroare"
-    assert _rejection_reason({"error": True}) == "no reason given"
 
 
 async def test_the_number_starts_at_the_last_index(hass: HomeAssistant, loaded):

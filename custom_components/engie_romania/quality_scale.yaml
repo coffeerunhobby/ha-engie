@@ -1,0 +1,85 @@
+rules:
+  # Bronze
+  action-setup:
+    status: exempt
+    comment: The integration registers no actions.
+  appropriate-polling: done
+  brands:
+    status: done
+    comment: Bundled in the brand/ folder, as custom integrations do.
+  common-modules: done
+  config-flow: done
+  config-flow-test-coverage: done
+  dependency-transparency: done
+  docs-actions:
+    status: exempt
+    comment: The integration registers no actions.
+  docs-conditions:
+    status: exempt
+    comment: The integration provides no conditions.
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: done
+  docs-triggers:
+    status: exempt
+    comment: The integration provides no triggers.
+  entity-event-setup: done
+  entity-unique-id: done
+  has-entity-name: done
+  runtime-data: done
+  test-before-configure: done
+  test-before-setup: done
+  unique-config-entry: done
+
+  # Silver
+  action-exceptions: done
+  config-entry-unloading: done
+  docs-configuration-parameters:
+    status: exempt
+    comment: There are no options.
+  docs-installation-parameters: done
+  entity-unavailable:
+    status: done
+    comment: >
+      Everything is unavailable when the account cannot be reached. A single place
+      that fails keeps its last data while the others refresh; billing data does
+      not go stale within one polling interval.
+  integration-owner: done
+  log-when-unavailable: done
+  parallel-updates: done
+  reauthentication-flow: done
+  test-coverage: done
+
+  # Gold
+  devices: done
+  diagnostics: done
+  discovery:
+    status: exempt
+    comment: A cloud account; there is nothing on the network to discover.
+  discovery-update-info:
+    status: exempt
+    comment: A cloud account; there is nothing on the network to discover.
+  docs-data-update: done
+  docs-examples: todo
+  docs-known-limitations: todo
+  docs-supported-devices:
+    status: exempt
+    comment: A service, not a device.
+  docs-supported-functions: done
+  docs-troubleshooting: todo
+  docs-use-cases: todo
+  dynamic-devices: done
+  entity-category: todo
+  entity-device-class: done
+  entity-disabled-by-default: todo
+  entity-translations: done
+  exception-translations: done
+  icon-translations: done
+  reconfiguration-flow: done
+  repair-issues: todo
+  stale-devices: todo
+
+  # Platinum
+  async-dependency: done
+  inject-websession: done
+  strict-typing: todo
