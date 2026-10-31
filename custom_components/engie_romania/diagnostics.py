@@ -50,7 +50,7 @@ async def async_get_config_entry_diagnostics(
     points = _plain(coordinator.data or {})
     return {
         "entry": {
-            # The title is "ENGIE — <e-mail>", so it is personal data too.
+            # The title is "ENGIE România — <e-mail>", so it is personal data too.
             "title": "<redacted>",
             "data": async_redact_data(dict(entry.data), TO_REDACT_ENTRY),
         },

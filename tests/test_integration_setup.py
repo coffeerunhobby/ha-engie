@@ -36,7 +36,7 @@ async def entry(hass: HomeAssistant, enable_custom_integrations) -> MockConfigEn
     cipher = await EngieCipher.async_load(hass)
     return MockConfigEntry(
         domain=DOMAIN,
-        title="ENGIE — user@example.com",
+        title="ENGIE România — user@example.com",
         unique_id="user@example.com",
         data={
             CONF_USERNAME: "user@example.com",

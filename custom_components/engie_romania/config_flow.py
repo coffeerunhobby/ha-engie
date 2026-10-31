@@ -107,7 +107,7 @@ class EngieConfigFlow(ConfigFlow, domain=DOMAIN):
                 else:
                     cipher = await EngieCipher.async_load(self.hass)
                     return self.async_create_entry(
-                        title=f"ENGIE — {username}",
+                        title=f"ENGIE România — {username}",
                         data={
                             CONF_USERNAME: username,
                             CONF_PASSWORD: cipher.encrypt(user_input[CONF_PASSWORD]),
