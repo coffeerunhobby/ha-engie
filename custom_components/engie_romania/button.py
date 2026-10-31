@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import date
 from typing import Any
 
 from aioengieromania import (
@@ -43,7 +44,7 @@ _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 1
 
 
-def _today():
+def _today() -> date:
     return dt_util.now().date()
 
 

@@ -15,7 +15,9 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
+from typing import Any, cast
 
+from aioengieromania import MonthlyConsumption
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
 from homeassistant.components.recorder.statistics import async_add_external_statistics
 from homeassistant.const import UnitOfEnergy
@@ -23,7 +25,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
 from .const import DIVISION_NAMES, DOMAIN
-from aioengieromania import MonthlyConsumption
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,7 +41,8 @@ def _metadata(stat_id: str, name: str) -> StatisticMetaData:
     ``unit_class``, which from 2026.11 is no longer derived for us. Releases before
     2025.11 reject unknown metadata keys, so it is sent only where declared.
     """
-    metadata: StatisticMetaData = {
+    # Built as a plain dict: which keys exist depends on the Home Assistant version.
+    metadata: dict[str, Any] = {
         "has_sum": True,
         "name": name,
         "source": DOMAIN,
@@ -55,7 +57,7 @@ def _metadata(stat_id: str, name: str) -> StatisticMetaData:
         metadata["has_mean"] = False
     if "unit_class" in StatisticMetaData.__annotations__:
         metadata["unit_class"] = "energy"
-    return metadata
+    return cast(StatisticMetaData, metadata)
 
 
 def monthly_points(months: list[MonthlyConsumption]) -> list[tuple[datetime, float, float]]:

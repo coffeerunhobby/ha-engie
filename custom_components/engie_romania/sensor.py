@@ -13,19 +13,19 @@ from dataclasses import dataclass
 from datetime import date, datetime, time
 from typing import Any
 
-from aioengieromania import Meter, PointData
+from aioengieromania import DIVISION_GAS, Meter, PointData
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import UnitOfEnergy, UnitOfVolume
+from homeassistant.const import EntityCategory, UnitOfEnergy, UnitOfVolume
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from .const import CURRENCY_RON, DIVISION_GAS, DIVISION_NAMES
+from .const import CURRENCY_RON, DIVISION_NAMES
 from .coordinator import EngieConfigEntry, EngieCoordinator
 from .entity import EngiePlaceEntity
 
@@ -117,6 +117,8 @@ PLACE_SENSORS: tuple[EngieSensorDescription, ...] = (
     EngieSensorDescription(
         key="due_date",
         translation_key="due_date",
+        # The same date as "Due date (relative)", as text for templates.
+        entity_registry_enabled_default=False,
         value_fn=lambda p: _iso(_next_due_date(p)),
     ),
     EngieSensorDescription(
@@ -257,6 +259,8 @@ class EngieSelfReadingSensor(_MeterSensor):
     """Whether the self-reading window is open, with its dates."""
 
     _kind = "self_reading"
+    # The "Self-reading open" binary sensor is the one to use; this adds the dates.
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     @property
     def native_value(self) -> str | None:

@@ -38,3 +38,10 @@ jobs:
           pip install ${{ matrix.ha }} -r requirements_test.txt
       - name: Run tests
         run: pytest -q
+      # Strict typing is a platinum rule of the quality scale; checked against
+      # the newest Home Assistant, whose type hints are the reference.
+      - name: Type check
+        if: matrix.ha == ''
+        run: |
+          pip install mypy
+          mypy --strict custom_components/engie_romania

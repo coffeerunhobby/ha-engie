@@ -23,6 +23,8 @@ CONF_UPDATE_INTERVAL: Final = "update_interval"
 
 # ENGIE bills monthly and the meter index changes at most daily.
 UPDATE_INTERVAL: Final = timedelta(hours=6)
+# After a failed or partial update: a timeout should not cost a whole interval.
+RETRY_INTERVAL: Final = timedelta(minutes=15)
 
 CURRENCY_RON: Final = "RON"
 

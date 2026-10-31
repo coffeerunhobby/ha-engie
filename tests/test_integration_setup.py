@@ -77,7 +77,6 @@ async def test_every_place_gets_its_entities(hass: HomeAssistant, loaded):
         for entity_id in (
             f"sensor.{DOMAIN}_{poc}_amount_due",
             f"sensor.{DOMAIN}_{poc}_last_invoice",
-            f"sensor.{DOMAIN}_{poc}_due_date",
             f"sensor.{DOMAIN}_{poc}_due_date_relative",
             f"sensor.{DOMAIN}_{poc}_overdue",
             f"sensor.{DOMAIN}_{poc}_last_payment",
@@ -95,7 +94,7 @@ async def test_states_reflect_the_account(hass: HomeAssistant, loaded):
     poc = P.POC_A
     assert hass.states.get(f"sensor.{DOMAIN}_{poc}_amount_due").state == "123.45"
     assert hass.states.get(f"sensor.{DOMAIN}_{poc}_last_invoice").state == "123.45"
-    assert hass.states.get(f"sensor.{DOMAIN}_{poc}_due_date").state == "2026-09-15"
+    assert hass.states.get(f"sensor.{DOMAIN}_{poc}_due_date_relative").state.startswith("2026-09-15")
     assert hass.states.get(f"sensor.{DOMAIN}_{poc}_last_payment").state == "200.0"
     gas = hass.states.get(f"sensor.{DOMAIN}_{poc}_gas_meter_index")
     assert gas.state == "1234.0"

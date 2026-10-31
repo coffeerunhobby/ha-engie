@@ -21,7 +21,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import CONF_DEVICE_ID, DOMAIN, UPDATE_INTERVAL
+from .const import CONF_DEVICE_ID, DOMAIN, RETRY_INTERVAL, UPDATE_INTERVAL
 from .crypto import EngieCipher
 from .statistics import async_update_consumption_statistics
 from .store import EngieSubmissionStore
@@ -67,6 +67,16 @@ class EngieCoordinator(DataUpdateCoordinator[dict[str, PointData]]):
         return self.api
 
     async def _async_update_data(self) -> dict[str, PointData]:
+        # Retry soon after a failure or while a place is missing; the normal
+        # interval returns with the first complete update. Auth errors are
+        # left alone: they wait for the user.
+        self.update_interval = RETRY_INTERVAL
+        result = await self._async_fetch()
+        if not self._failed_places:
+            self.update_interval = UPDATE_INTERVAL
+        return result
+
+    async def _async_fetch(self) -> dict[str, PointData]:
         api = self._ensure_api()
         try:
             places = await api.async_get_places()

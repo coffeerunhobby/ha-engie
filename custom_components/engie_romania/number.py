@@ -9,13 +9,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from aioengieromania import Meter
+from aioengieromania import DIVISION_GAS, Meter
 from homeassistant.components.number import NumberMode, RestoreNumber
 from homeassistant.const import UnitOfEnergy, UnitOfVolume
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DIVISION_GAS, DIVISION_NAMES
+from .const import DIVISION_NAMES
 from .coordinator import EngieConfigEntry, EngieCoordinator
 from .entity import EngiePlaceEntity
 

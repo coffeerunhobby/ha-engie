@@ -8,6 +8,7 @@ window is useful information, not a fault.
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 
 from homeassistant.components.binary_sensor import (
@@ -25,7 +26,7 @@ from .entity import EngiePlaceEntity
 PARALLEL_UPDATES = 0
 
 
-def _today():
+def _today() -> date:
     return dt_util.now().date()
 
 
@@ -83,10 +84,11 @@ class EngieOverdueBinarySensor(EngiePlaceEntity, BinarySensorEntity):
         if point is None:
             return None
         overdue = point.overdue_invoices(_today())
+        due_dates = [i.due_date for i in overdue if i.due_date]
         return {
             "amount_due": point.amount_due,
             "overdue_invoices": len(overdue),
-            "oldest_due_date": min(i.due_date for i in overdue).isoformat() if overdue else None,
+            "oldest_due_date": min(due_dates).isoformat() if due_dates else None,
         }
 
 

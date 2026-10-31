@@ -287,3 +287,38 @@ def test_a_recorder_failure_does_not_break_the_update(hass: HomeAssistant):
         MagicMock(side_effect=RuntimeError("recorder down")),
     ):
         async_update_consumption_statistics(hass, "p1", "gaz", "Acasa", months)
+
+
+# ── Entity settings and retries ─────────────────────────────────────────────
+
+
+async def test_the_text_due_date_is_off_and_the_window_is_diagnostic(
+    hass: HomeAssistant, loaded
+):
+    from homeassistant.helpers import entity_registry as er
+
+    registry = er.async_get(hass)
+    due = registry.async_get(f"sensor.{DOMAIN}_{P.POC_A}_due_date")
+    assert due.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+    window = registry.async_get(f"sensor.{DOMAIN}_{P.POC_A}_gas_self_reading_window")
+    assert window.entity_category == "diagnostic"
+
+
+async def test_a_failure_retries_in_15_minutes_then_returns_to_6_hours(loaded):
+    from datetime import timedelta
+
+    coordinator = loaded.runtime_data
+    assert coordinator.update_interval == timedelta(hours=6)
+    StubApi.everything_down = True
+    await coordinator.async_refresh()
+    assert coordinator.update_interval == timedelta(minutes=15)
+
+    StubApi.everything_down = False
+    StubApi.failing_poc = P.POC_B
+    await coordinator.async_refresh()
+    assert coordinator.last_update_success
+    assert coordinator.update_interval == timedelta(minutes=15)
+
+    StubApi.failing_poc = None
+    await coordinator.async_refresh()
+    assert coordinator.update_interval == timedelta(hours=6)
