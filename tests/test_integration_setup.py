@@ -58,6 +58,7 @@ async def loaded(hass: HomeAssistant, entry: MockConfigEntry):
         ),
         patch("custom_components.engie_romania.sensor._today", return_value=date(2026, 10, 25)),
         patch("custom_components.engie_romania.binary_sensor._today", return_value=date(2026, 10, 25)),
+        patch("custom_components.engie_romania.button._today", return_value=date(2026, 10, 25)),
     ):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()

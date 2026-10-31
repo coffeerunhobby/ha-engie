@@ -30,6 +30,8 @@ STORAGE_VERSION: Final = 1
 # The password-encryption key lives in its own store, deliberately separate from
 # the config entry holding the ciphertext, so leaking one file is not enough.
 STORAGE_KEY_SECRET: Final = f"{DOMAIN}_key"
+# Which self-reading windows already had an index sent, per config entry.
+STORAGE_KEY_SUBMISSIONS: Final = f"{DOMAIN}_submissions"
 
 # ── MyENGIE API ─────────────────────────────────────────────────────────────
 # The mobile app's JSON gateway. A form POST to /v1/login returns a bearer token;
@@ -39,6 +41,8 @@ LOGIN_URL: Final = f"{BASE_URL}/v1/login"
 PLACES_URL: Final = f"{BASE_URL}/v1/placesofconsumption"
 DIVISIONS_URL: Final = f"{BASE_URL}/v1/placesofconsumption/divisions/{{poc}}"
 INDEX_URL: Final = f"{BASE_URL}/v1/index/{{poc}}"
+# Self-reading submission: a form POST (not JSON), answered 200 even on rejection.
+SUBMIT_INDEX_URL: Final = f"{BASE_URL}/v1/index"
 CONSUMPTION_URL: Final = f"{BASE_URL}/v1/index/consumption/{{poc}}"
 INVOICES_URL: Final = f"{BASE_URL}/v1/invoices/history/{{poc}}"
 PAYMENTS_URL: Final = f"{BASE_URL}/v1/invoices/payment/history/{{pa}}"

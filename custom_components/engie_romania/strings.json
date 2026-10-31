@@ -90,6 +90,22 @@
       "self_reading_open_electricity": {
         "name": "Electricity self-reading open"
       }
+    },
+    "number": {
+      "reading_to_submit_gas": {
+        "name": "Gas reading to submit"
+      },
+      "reading_to_submit_electricity": {
+        "name": "Electricity reading to submit"
+      }
+    },
+    "button": {
+      "submit_reading_gas": {
+        "name": "Submit gas reading"
+      },
+      "submit_reading_electricity": {
+        "name": "Submit electricity reading"
+      }
     }
   }
 }

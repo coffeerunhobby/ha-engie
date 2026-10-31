@@ -7,13 +7,20 @@ from homeassistant.core import HomeAssistant
 
 from .coordinator import EngieConfigEntry, EngieCoordinator
 from .crypto import EngieCipher
+from .store import EngieSubmissionStore
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
+PLATFORMS: list[Platform] = [
+    Platform.SENSOR,
+    Platform.BINARY_SENSOR,
+    Platform.NUMBER,
+    Platform.BUTTON,
+]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: EngieConfigEntry) -> bool:
     """Set up ENGIE România from a config entry."""
     coordinator = EngieCoordinator(hass, entry, await EngieCipher.async_load(hass))
+    await coordinator.submissions.async_load()
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -34,3 +41,8 @@ async def _async_reload_entry(hass: HomeAssistant, entry: EngieConfigEntry) -> N
     coordinator = entry.runtime_data
     if coordinator is None or coordinator.settings_changed():
         await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: EngieConfigEntry) -> None:
+    """Forget the submission record of a removed account."""
+    await EngieSubmissionStore(hass, entry.entry_id).async_remove()

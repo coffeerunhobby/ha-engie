@@ -32,6 +32,7 @@ from .const import (
     PAYMENTS_URL,
     PLACES_URL,
     REQUEST_TIMEOUT,
+    SUBMIT_INDEX_URL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -47,6 +48,48 @@ class EngieAuthError(EngieError):
 
 class EngieConnectionError(EngieError):
     """The API could not be reached or did not answer in time."""
+
+
+class EngieRejectedError(EngieError):
+    """ENGIE refused a submission; the message is ENGIE's own reason."""
+
+
+def _rejection_reason(body: Any) -> str:
+    """ENGIE's validation messages from an ``error: true`` envelope, briefly."""
+    found: list[str] = []
+
+    def collect(value: Any) -> None:
+        if isinstance(value, str) and value.strip():
+            found.append(value.strip())
+        elif isinstance(value, list):
+            for item in value:
+                collect(item)
+        elif isinstance(value, dict):
+            for item in value.values():
+                collect(item)
+
+    if isinstance(body, dict):
+        collect(body.get("errors"))
+        if not found:
+            collect(body.get("description"))
+    reason = "; ".join(dict.fromkeys(found))[:200]
+    return reason or "no reason given"
+
+
+def index_form(
+    poc: str, pa: str, division: str, installation: str, serial: str | None, index: int
+) -> dict[str, str]:
+    """The form fields the app sends to report a meter index."""
+    form = {
+        "poc_number": poc,
+        "pa": pa,
+        "installation_number": installation,
+        "division": division,
+        "index": str(index),
+    }
+    if serial:
+        form["serie_contor"] = serial
+    return form
 
 
 def _window(days: int) -> dict[str, str]:
@@ -124,8 +167,14 @@ class EngieApiClient:
         url: str,
         params: dict[str, Any] | None = None,
         payload: dict[str, Any] | None = None,
+        form: dict[str, str] | None = None,
     ) -> Any:
-        """Issue an authenticated request, logging in again once on 401."""
+        """Issue an authenticated request, logging in again once on 401.
+
+        ``form`` sends a urlencoded body instead of JSON; such requests are
+        submissions, so a refusal raises :class:`EngieRejectedError` with ENGIE's
+        reason rather than a bare status.
+        """
         if self._token is None:
             await self.async_login()
         for attempt in (1, 2):
@@ -135,6 +184,7 @@ class EngieApiClient:
                     url,
                     params={k: v for k, v in (params or {}).items() if v is not None},
                     json=payload,
+                    data=form,
                     headers={"Authorization": f"Bearer {self._token}"},
                 ) as resp:
                     if resp.status in (401, 403) and attempt == 1:
@@ -143,6 +193,11 @@ class EngieApiClient:
                         continue
                     if resp.status in (401, 403):
                         raise EngieAuthError("Session rejected by MyENGIE")
+                    if form is not None and resp.status < 500:
+                        body = await self._decode(resp)
+                        if resp.status >= 400 or (isinstance(body, dict) and body.get("error")):
+                            raise EngieRejectedError(_rejection_reason(body))
+                        return body
                     if resp.status == 404:
                         return None
                     if resp.status >= 400:
@@ -175,6 +230,22 @@ class EngieApiClient:
                 "installation_number": installation,
                 "serie_contor": serial,
             },
+        )
+
+    async def async_submit_index(
+        self,
+        poc: str,
+        pa: str,
+        division: str,
+        installation: str,
+        serial: str | None,
+        index: int,
+    ) -> Any:
+        """Report a self-read meter index. Raises EngieRejectedError when refused."""
+        return await self._request(
+            "POST",
+            SUBMIT_INDEX_URL,
+            form=index_form(poc, pa, division, installation, serial, index),
         )
 
     async def async_get_consumption(self, poc: str, pa: str) -> Any:

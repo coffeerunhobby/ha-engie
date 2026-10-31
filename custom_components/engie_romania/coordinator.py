@@ -41,6 +41,7 @@ from .parser import (
     parse_places,
 )
 from .statistics import async_update_consumption_statistics
+from .store import EngieSubmissionStore
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -68,6 +69,7 @@ class EngieCoordinator(DataUpdateCoordinator[dict[str, PointData]]):
         self._interval_hours = hours
         self._cipher = cipher
         self.api: EngieApiClient | None = None
+        self.submissions = EngieSubmissionStore(hass, config_entry.entry_id)
 
     def settings_changed(self) -> bool:
         current = int(

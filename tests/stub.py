@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from custom_components.engie_romania.api import EngieAuthError, EngieConnectionError
+from custom_components.engie_romania.api import (
+    EngieAuthError,
+    EngieConnectionError,
+    EngieRejectedError,
+)
 
 from . import payloads as P
 
@@ -16,6 +20,9 @@ class StubApi:
     failing_poc: str | None = None
     reject_login = False
     everything_down = False
+    # Self-readings sent, as (poc, pa, division, installation, serial, index).
+    submitted: list[tuple] = []
+    reject_index: str | None = None
 
     def __init__(self, *args, **kwargs) -> None:
         pass
@@ -25,6 +32,8 @@ class StubApi:
         cls.failing_poc = None
         cls.reject_login = False
         cls.everything_down = False
+        cls.submitted = []
+        cls.reject_index = None
 
     def _check(self, poc: str | None = None) -> None:
         if StubApi.everything_down or (poc is not None and poc == StubApi.failing_poc):
@@ -46,6 +55,13 @@ class StubApi:
     async def async_get_index(self, poc, pa, division, installation, serial):
         self._check(poc)
         return P.index(poc, int(installation))
+
+    async def async_submit_index(self, poc, pa, division, installation, serial, index):
+        self._check(poc)
+        if StubApi.reject_index:
+            raise EngieRejectedError(StubApi.reject_index)
+        StubApi.submitted.append((poc, pa, division, installation, serial, index))
+        return {"error": False, "data": [], "errors": []}
 
     async def async_get_consumption(self, poc, pa):
         self._check(poc)
