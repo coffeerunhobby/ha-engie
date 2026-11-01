@@ -9,7 +9,6 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-import voluptuous as vol
 from aioengieromania import EngieAuthError, EngieClient, EngieConnectionError, EngieError
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
@@ -22,6 +21,11 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import CONF_DEVICE_ID, DOMAIN
+
+try:
+    import probatio as vol
+except ImportError:  # Home Assistant before 2026.9 validates with voluptuous
+    import voluptuous as vol  # type: ignore[no-redef]
 from .coordinator import EngieConfigEntry
 from .crypto import EngieCipher
 

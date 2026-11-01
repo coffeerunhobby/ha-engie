@@ -11,15 +11,19 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
-    BinarySensorEntity,
-)
+from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from .const import DIVISION_NAMES
+
+try:
+    from homeassistant.components.binary_sensor.const import BinarySensorDeviceClass
+except ImportError:  # Home Assistant before 2026.10 defines it in the package itself
+    from homeassistant.components.binary_sensor import (  # type: ignore[attr-defined]
+        BinarySensorDeviceClass,
+    )
 from .coordinator import EngieConfigEntry, EngieCoordinator
 from .entity import EngiePlaceEntity
 
