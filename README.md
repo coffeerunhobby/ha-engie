@@ -2,8 +2,7 @@
 
 Unofficial Home Assistant integration for MyENGIE România accounts.
 
-**Status: in development (0.4.0).** Submitted to the HACS default store; until it
-is listed, add it as a custom repository.
+**Status: in development (0.4.0).** Available in the HACS default store.
 
 ## What it shows
 
@@ -39,6 +38,18 @@ refuses the index, its own reason is shown. Nothing is ever sent automatically.
 
 The button's attributes show what the next press will do: `will_submit_to_engie`,
 `window_open`, `window_start`, `window_end` and `already_submitted_this_window`.
+
+## Installation
+
+1. Open **HACS** (from Home Assistant 2026.11, the built-in **Marketplace**) and
+   search for **ENGIE România**.
+2. Select it, **Download**, then restart Home Assistant.
+3. Add the integration as described under [Setup](#setup).
+
+If the search finds nothing yet, add `https://github.com/coffeerunhobby/ha-engie`
+as a custom repository of type **Integration** (HACS **⋮ → Custom repositories**)
+and search again. To install by hand instead, copy `custom_components/engie_romania`
+into your configuration's `custom_components` folder and restart.
 
 ## Setup
 
