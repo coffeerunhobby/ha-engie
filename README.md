@@ -2,7 +2,7 @@
 
 Unofficial Home Assistant integration for MyENGIE România accounts.
 
-**Status: in development (0.4.0).** Available in the HACS default store.
+**Status: in development (0.5.0).** Available in the HACS default store.
 
 ## What it shows
 

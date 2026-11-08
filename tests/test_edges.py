@@ -6,7 +6,7 @@ All values are SYNTHETIC; only the HTTP client is stubbed.
 from __future__ import annotations
 
 from datetime import date
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -263,16 +263,20 @@ async def test_failed_sends_say_what_happened(
 # ── Statistics ──────────────────────────────────────────────────────────────
 
 
-def test_statistics_are_imported_with_running_totals(hass: HomeAssistant):
+async def test_statistics_are_imported_with_running_totals(hass: HomeAssistant):
     months = [
         MonthlyConsumption(date(2026, 7, 1), 150.0),
         MonthlyConsumption(date(2026, 8, 1), -20.0),
     ]
-    with patch(
-        "custom_components.engie_romania.statistics.async_add_external_statistics"
-    ) as add:
-        async_update_consumption_statistics(hass, "p1", "gaz", "Acasa", months)
-        async_update_consumption_statistics(hass, "p1", "gaz", "Acasa", [])
+    with (
+        patch("custom_components.engie_romania.statistics.async_add_external_statistics") as add,
+        patch(
+            "custom_components.engie_romania.statistics._async_stored_months",
+            AsyncMock(return_value=[]),
+        ),
+    ):
+        await async_update_consumption_statistics(hass, "p1", "gaz", "Acasa", months)
+        await async_update_consumption_statistics(hass, "p1", "gaz", "Acasa", [])
     add.assert_called_once()
     metadata, rows = add.call_args.args[1], add.call_args.args[2]
     assert metadata["statistic_id"] == f"{DOMAIN}:gas_p1"
@@ -280,13 +284,13 @@ def test_statistics_are_imported_with_running_totals(hass: HomeAssistant):
     assert [r["sum"] for r in rows] == [150.0, 130.0]
 
 
-def test_a_recorder_failure_does_not_break_the_update(hass: HomeAssistant):
+async def test_a_recorder_failure_does_not_break_the_update(hass: HomeAssistant):
     months = [MonthlyConsumption(date(2026, 7, 1), 150.0)]
     with patch(
-        "custom_components.engie_romania.statistics.async_add_external_statistics",
-        MagicMock(side_effect=RuntimeError("recorder down")),
+        "custom_components.engie_romania.statistics._async_stored_months",
+        AsyncMock(side_effect=RuntimeError("recorder down")),
     ):
-        async_update_consumption_statistics(hass, "p1", "gaz", "Acasa", months)
+        await async_update_consumption_statistics(hass, "p1", "gaz", "Acasa", months)
 
 
 # ── Entity settings and retries ─────────────────────────────────────────────

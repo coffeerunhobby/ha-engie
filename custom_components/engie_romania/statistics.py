@@ -14,14 +14,19 @@ was billed, and the Energy Dashboard shows it as a negative bar for that month.
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable
 from datetime import datetime
 from typing import Any, cast
 
 from aioengieromania import MonthlyConsumption
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
-from homeassistant.components.recorder.statistics import async_add_external_statistics
+from homeassistant.components.recorder.statistics import (
+    async_add_external_statistics,
+    statistics_during_period,
+)
 from homeassistant.const import UnitOfEnergy
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.recorder import get_instance
 from homeassistant.util import dt as dt_util
 
 from .const import DIVISION_NAMES, DOMAIN
@@ -60,18 +65,55 @@ def _metadata(stat_id: str, name: str) -> StatisticMetaData:
     return cast(StatisticMetaData, metadata)
 
 
-def monthly_points(months: list[MonthlyConsumption]) -> list[tuple[datetime, float, float]]:
-    """``(local month start, that month's kWh, running total)``, oldest first."""
+def monthly_points(
+    months: list[MonthlyConsumption], stored: Iterable[tuple[datetime, float]] = ()
+) -> list[tuple[datetime, float, float]]:
+    """``(local month start, that month's kWh, running total)``, oldest first.
+
+    ENGIE returns only the last three years, so each month the oldest one drops
+    out. ``stored`` are the ``(start, kWh)`` rows already imported; the ones older
+    than what ENGIE returned are kept at the front, so the running total keeps
+    counting from the first month ever imported instead of restarting, which
+    would show a wrong bar where the window used to begin.
+    """
+    current = [
+        (dt_util.start_of_local_day(datetime.combine(m.month, datetime.min.time())), m.kwh)
+        for m in sorted(months, key=lambda m: m.month)
+    ]
+    if not current:
+        return []
+    first = current[0][0]
+    rows = sorted((r for r in stored if r[0] < first), key=lambda r: r[0]) + current
     points: list[tuple[datetime, float, float]] = []
     total = 0.0
-    for month in sorted(months, key=lambda m: m.month):
-        total = round(total + month.kwh, 3)
-        start = dt_util.start_of_local_day(datetime.combine(month.month, datetime.min.time()))
-        points.append((start, month.kwh, total))
+    for start, kwh in rows:
+        total = round(total + kwh, 3)
+        points.append((start, kwh, total))
     return points
 
 
-def async_update_consumption_statistics(
+async def _async_stored_months(hass: HomeAssistant, stat_id: str) -> list[tuple[datetime, float]]:
+    """The ``(start, kWh)`` rows already imported; each row's state is its month's kWh."""
+    stats = await get_instance(hass).async_add_executor_job(
+        statistics_during_period,
+        hass,
+        dt_util.utc_from_timestamp(0),
+        None,
+        {stat_id},
+        "hour",
+        None,
+        {"state"},
+    )
+    rows: list[tuple[datetime, float]] = []
+    for row in stats.get(stat_id, []):
+        start, state = row.get("start"), row.get("state")
+        if start is None or state is None:
+            continue
+        rows.append((dt_util.utc_from_timestamp(start), float(state)))
+    return rows
+
+
+async def async_update_consumption_statistics(
     hass: HomeAssistant,
     poc: str,
     division: str,
@@ -79,12 +121,13 @@ def async_update_consumption_statistics(
     months: list[MonthlyConsumption],
 ) -> None:
     """Import one place's monthly consumption for one division."""
-    points = monthly_points(months)
-    if not points:
+    if not months:
         return
     stat_id = statistic_id(poc, division)
     label = DIVISION_NAMES.get(division, division)
     try:
+        # Rewriting the older rows too repairs totals an earlier release restarted.
+        points = monthly_points(months, await _async_stored_months(hass, stat_id))
         async_add_external_statistics(
             hass,
             _metadata(stat_id, f"ENGIE {display_name} {label}"),

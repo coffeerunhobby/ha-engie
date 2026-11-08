@@ -109,7 +109,7 @@ class EngieCoordinator(DataUpdateCoordinator[dict[str, PointData]]):
                 _LOGGER.info("A MyENGIE place of consumption refreshes again")
             point.payments = payments_by_pa.get(place.pa, [])
             for division, months in point.consumption.items():
-                async_update_consumption_statistics(
+                await async_update_consumption_statistics(
                     self.hass, place.poc, division, point.address or place.poc, months
                 )
             result[place.poc] = point

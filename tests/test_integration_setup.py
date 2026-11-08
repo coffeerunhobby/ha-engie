@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 from datetime import date
-from unittest.mock import MagicMock, patch
+from pathlib import Path
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -54,7 +56,7 @@ async def loaded(hass: HomeAssistant, entry: MockConfigEntry):
         patch("custom_components.engie_romania.coordinator.EngieClient", StubApi),
         patch(
             "custom_components.engie_romania.coordinator.async_update_consumption_statistics",
-            MagicMock(return_value=None),
+            AsyncMock(return_value=None),
         ),
         patch("custom_components.engie_romania.sensor._today", return_value=date(2026, 10, 25)),
         patch("custom_components.engie_romania.binary_sensor._today", return_value=date(2026, 10, 25)),
@@ -144,3 +146,16 @@ async def test_older_entries_lose_the_interval_setting(loaded):
     """1.1 entries carried a user-set polling interval; core picks it now."""
     assert loaded.minor_version == 2
     assert CONF_UPDATE_INTERVAL not in loaded.data
+
+
+def test_the_library_is_pinned_at_the_integration_version():
+    """aioengieromania and the integration release under one version number."""
+    root = Path(__file__).parent.parent
+    manifest = json.loads((root / "custom_components/engie_romania/manifest.json").read_text())
+    test_pins = [
+        line
+        for line in (root / "requirements_test.txt").read_text().splitlines()
+        if line.startswith("aioengieromania")
+    ]
+    assert manifest["requirements"] == [f"aioengieromania=={manifest['version']}"]
+    assert test_pins == manifest["requirements"]
